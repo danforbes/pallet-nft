@@ -1,12 +1,15 @@
 [package]
-authors = ['Dan Forbes <dan@parity.io>']
-description = 'An update to https://github.com/shawntabrizi/substratekitties.'
 edition = '2018'
-homepage = 'https://github.com/danforbes/substrate-node-template/tree/nft'
+name = 'pallet-commodities'
+version = '1.0.0-rc5'
+authors = ['Dan Forbes <dan@parity.io>']
 license = 'Unlicense'
-name = 'pallet-nft'
-repository = 'https://github.com/danforbes/substrate-node-template/tree/nft'
-version = '2.0.0-rc5'
+description = 'A unique asset (NFT) interface and a Substrate FRAME implementation optimized for commodity assets.'
+homepage = 'https://github.com/danforbes/pallet-nft'
+repository = 'https://github.com/danforbes/pallet-nft'
+readme = 'README.md'
+keywords = ['substrate', 'frame', 'nft', 'blockchain', 'asset']
+categories = ['cryptography::cryptocurrencies', 'data-structures', 'no-std']
 
 [dependencies.codec]
 default-features = false

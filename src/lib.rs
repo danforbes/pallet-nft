@@ -1,9 +1,9 @@
-//! # Unique Assets Implementation
+//! # Unique Assets Implementation: Commodities
 //!
 //! This pallet exposes capabilities for managing unique assets, also known as
 //! non-fungible tokens (NFTs).
 //!
-//! - [`nft::Trait`](./trait.Trait.html)
+//! - [`commodities::Trait`](./trait.Trait.html)
 //! - [`Calls`](./enum.Call.html)
 //! - [`Errors`](./enum.Error.html)
 //! - [`Events`](./enum.RawEvent.html)
@@ -18,7 +18,7 @@
 //! them, as calculated by the runtime system's hashing algorithm.
 //!
 //! This pallet implements the [`UniqueAssets`](./nft/trait.UniqueAssets.html)
-//! trait.
+//! trait and is optimized for assets that are expected to be traded frequently.
 //!
 //! ### Dispatchable Functions
 //!
@@ -109,7 +109,7 @@ impl<AssetId, AssetInfo> NFT for IdentifiedAsset<AssetId, AssetInfo> {
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait<I>, I: Instance = DefaultInstance> as NFT {
+    trait Store for Module<T: Trait<I>, I: Instance = DefaultInstance> as Commodity {
         /// The total number of this type of asset that exists (minted - burned).
         Total get(fn total): u128 = 0;
         /// The total number of this type of asset that has been burned (may overflow).

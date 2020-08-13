@@ -25,6 +25,7 @@ parameter_types! {
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 }
+
 impl system::Trait for Test {
     type BaseCallFilter = ();
     type Origin = Origin;
@@ -52,10 +53,12 @@ impl system::Trait for Test {
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
 }
+
 parameter_types! {
     pub const MaxAssets: u128 = 5;
     pub const MaxAssetsPerUser: u64 = 2;
 }
+
 impl Trait for Test {
     type Event = ();
     type AssetAdmin = frame_system::EnsureRoot<Self::AccountId>;
