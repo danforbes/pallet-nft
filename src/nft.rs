@@ -9,7 +9,7 @@
 //! attributes (the asset info type). An asset ID type distinguishes unique assets from one another.
 //! Assets may be created (minted), destroyed (burned) or transferred.
 //!
-//! This abstraction is implemented by [nft::Module](../struct.Module.html).
+//! This abstraction is implemented by [pallet_commodities::Module](../struct.Module.html).
 
 use frame_support::{
     dispatch::{result::Result, DispatchError, DispatchResult},

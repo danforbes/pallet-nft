@@ -14,11 +14,6 @@ impl_outer_origin! {
     pub enum Origin for Test where system = frame_system {}
 }
 
-// For testing the pallet, we construct most of a mock runtime. This means
-// first constructing a configuration type (`Test`) which `impl`s each of the
-// configuration traits of pallets we want to use.
-#[derive(Clone, Eq, PartialEq)]
-pub struct Test;
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub const MaximumBlockWeight: Weight = 1024;
@@ -55,16 +50,22 @@ impl system::Trait for Test {
 }
 
 parameter_types! {
-    pub const MaxAssets: u128 = 5;
-    pub const MaxAssetsPerUser: u64 = 2;
+    pub const MaxCommodities: u128 = 5;
+    pub const MaxCommoditiesPerUser: u64 = 2;
 }
+
+// For testing the pallet, we construct most of a mock runtime. This means
+// first constructing a configuration type (`Test`) which `impl`s each of the
+// configuration traits of pallets we want to use.
+#[derive(Clone, Eq, PartialEq)]
+pub struct Test;
 
 impl Trait for Test {
     type Event = ();
-    type AssetAdmin = frame_system::EnsureRoot<Self::AccountId>;
-    type AssetInfo = Vec<u8>;
-    type AssetLimit = MaxAssets;
-    type UserAssetLimit = MaxAssetsPerUser;
+    type CommodityAdmin = frame_system::EnsureRoot<Self::AccountId>;
+    type CommodityInfo = Vec<u8>;
+    type CommodityLimit = MaxCommodities;
+    type UserCommodityLimit = MaxCommoditiesPerUser;
 }
 
 // system under test

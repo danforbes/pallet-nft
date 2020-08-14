@@ -53,7 +53,7 @@ public functions needed to manage a set of unique assets.
 ## Reference Implementation
 
 The [reference implementation](src/lib.rs) defined in this project is referred to as a "commodity" - a unique asset that
-is designed for frequent trading. In order to optimize for this use-case, _sorted_ lists of assets are stored per owner.
+is designed for frequent trading. In order to optimize for this use case, _sorted_ lists of assets are stored per owner.
 Although maintaining a sorted list is trivial with Rust vectors, which implement a binary search API that can be used
 for sorted insertion, it introduces significant overhead when an asset is _created_ because the entire list must be
 decoded from the backing trie in order to insert the new asset in the correct spot. Maintaining a sorted asset list is

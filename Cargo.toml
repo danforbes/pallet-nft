@@ -1,7 +1,7 @@
 [package]
 edition = '2018'
 name = 'pallet-commodities'
-version = '1.0.0-rc5'
+version = '1.0.0-rc6'
 authors = ['Dan Forbes <dan@parity.io>']
 license = 'Unlicense'
 description = 'A unique asset (NFT) interface and a Substrate FRAME implementation optimized for commodity assets.'
@@ -15,7 +15,7 @@ categories = ['cryptography::cryptocurrencies', 'data-structures', 'no-std']
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = '1.3.0'
+version = '1.3.1'
 
 [dependencies.frame-support]
 default-features = false
@@ -24,17 +24,6 @@ tag = 'v2.0.0-rc5'
 version = '2.0.0-rc5'
 
 [dependencies.frame-system]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc5'
-version = '2.0.0-rc5'
-[dev-dependencies.sp-core]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc5'
-version = '2.0.0-rc5'
-
-[dev-dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'v2.0.0-rc5'
@@ -49,6 +38,18 @@ version = '2.0.0-rc5'
 [dependencies.sp-std]
 git = 'https://github.com/paritytech/substrate.git'
 default-features = false
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
+
+[dev-dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc5'
+version = '2.0.0-rc5'
+
+[dev-dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
 tag = 'v2.0.0-rc5'
 version = '2.0.0-rc5'
 
