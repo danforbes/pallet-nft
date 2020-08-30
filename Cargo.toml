@@ -11,6 +11,9 @@ readme = 'README.md'
 keywords = ['substrate', 'frame', 'nft', 'blockchain', 'asset']
 categories = ['cryptography::cryptocurrencies', 'data-structures', 'no-std']
 
+[dependencies]
+serde = { version = "1.0.101", optional = true }
+
 [dependencies.codec]
 default-features = false
 features = ['derive']
@@ -59,6 +62,7 @@ targets = ['x86_64-unknown-linux-gnu']
 [features]
 default = ['std']
 std = [
+    'serde',
     'codec/std',
     'frame-support/std',
     'frame-system/std',

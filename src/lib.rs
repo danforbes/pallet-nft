@@ -124,6 +124,20 @@ decl_storage! {
         /// A mapping from a commodity ID to the account that owns it.
         AccountForCommodity get(fn account_for_commodity): map hasher(identity) CommodityId<T> => T::AccountId;
     }
+
+    add_extra_genesis {
+        config(balances): Vec<(T::AccountId, Vec<T::CommodityInfo>)>;
+        build(|config: &GenesisConfig<T, I>| {
+            for (who, assets) in config.balances.iter() {
+                for asset in assets {
+                    match <Module::<T, I> as UniqueAssets::<Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>>>::mint(who, asset.clone()) {
+                        Ok(_) => {}
+                        Err(err) => { sp_runtime::print(err) },
+                    }
+                }
+            }
+        });
+    }
 }
 
 decl_event!(
