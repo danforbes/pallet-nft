@@ -1,3 +1,5 @@
+[![Compatible with Substrate v2.0.0-rc6](https://img.shields.io/badge/Substrate-v2.0.0--rc6-E6007A)](https://github.com/paritytech/substrate/releases/tag/v2.0.0-rc6)
+
 # Commodities FRAME Pallet: NFTs for Substrate
 
 This is a [FRAME](https://substrate.dev/docs/en/knowledgebase/runtime/frame) pallet that defines and implements a
