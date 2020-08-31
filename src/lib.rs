@@ -132,7 +132,7 @@ decl_storage! {
                 for asset in assets {
                     match <Module::<T, I> as UniqueAssets::<Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>>>::mint(who, asset.clone()) {
                         Ok(_) => {}
-                        Err(err) => { sp_runtime::print(err) },
+                        Err(err) => { panic!(err) },
                     }
                 }
             }
