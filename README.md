@@ -66,6 +66,12 @@ transferring them. An alternative implementation, the Keepsake pallet, is in the
 
 Refer to the [mock runtime](src/mock.rs) and [provided tests](src/tests.rs) to see the NFT implementation in action.
 
+## Test Project
+
+In order to help develop this pallet, it is being consumed by
+[a test project](https://github.com/danforbes/substratekitties) - a work-in-progress update to
+[the original Substratekitties tutorial](https://github.com/shawntabrizi/substratekitties).
+
 ## Acknowledgements
 
 This project was inspired by works such as the following:
