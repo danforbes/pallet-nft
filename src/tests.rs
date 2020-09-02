@@ -29,10 +29,10 @@ fn mint() {
         let commodities_for_account = SUT::commodities_for_account::<u64>(1);
         assert_eq!(commodities_for_account.len(), 1);
         assert_eq!(
-            commodities_for_account[0].id,
+            commodities_for_account[0].0,
             Vec::<u8>::default().blake2_256().into()
         );
-        assert_eq!(commodities_for_account[0].commodity, Vec::<u8>::default());
+        assert_eq!(commodities_for_account[0].1, Vec::<u8>::default());
         assert_eq!(
             SUT::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
             1
@@ -151,10 +151,10 @@ fn transfer() {
         let commodities_for_account = SUT::commodities_for_account::<u64>(2);
         assert_eq!(commodities_for_account.len(), 1);
         assert_eq!(
-            commodities_for_account[0].id,
+            commodities_for_account[0].0,
             Vec::<u8>::default().blake2_256().into()
         );
-        assert_eq!(commodities_for_account[0].commodity, Vec::<u8>::default());
+        assert_eq!(commodities_for_account[0].1, Vec::<u8>::default());
         assert_eq!(
             SUT::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
             2

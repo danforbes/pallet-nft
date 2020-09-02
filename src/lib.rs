@@ -36,25 +36,18 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode, FullCodec};
+use codec::FullCodec;
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
     traits::{EnsureOrigin, Get},
     Hashable,
 };
 use frame_system::ensure_signed;
-use sp_runtime::{
-    traits::{Hash, Member},
-    RuntimeDebug,
-};
-use sp_std::{
-    cmp::{Eq, Ordering},
-    fmt::Debug,
-    vec::Vec,
-};
+use sp_runtime::traits::{Hash, Member};
+use sp_std::{cmp::Eq, fmt::Debug, vec::Vec};
 
 pub mod nft;
-pub use crate::nft::{UniqueAssets, NFT};
+pub use crate::nft::UniqueAssets;
 
 #[cfg(test)]
 mod mock;
@@ -66,7 +59,7 @@ pub trait Trait<I = DefaultInstance>: frame_system::Trait {
     /// The dispatch origin that is able to mint new instances of this type of commodity.
     type CommodityAdmin: EnsureOrigin<Self::Origin>;
     /// The data type that is used to describe this type of commodity.
-    type CommodityInfo: Hashable + Member + Debug + Default + FullCodec;
+    type CommodityInfo: Hashable + Member + Debug + Default + FullCodec + Ord;
     /// The maximum number of this type of commodity that may exist (minted - burned).
     type CommodityLimit: Get<u128>;
     /// The maximum number of this type of commodity that any single account may own.
@@ -77,39 +70,8 @@ pub trait Trait<I = DefaultInstance>: frame_system::Trait {
 /// The runtime system's hashing algorithm is used to uniquely identify commodities.
 pub type CommodityId<T> = <T as frame_system::Trait>::Hash;
 
-/// A generic definition of an NFT that will be used by this pallet.
-#[derive(Encode, Decode, Clone, Eq, RuntimeDebug)]
-pub struct Commodity<Hash, CommodityInfo> {
-    pub id: Hash,
-    pub commodity: CommodityInfo,
-}
-
-/// An alias for this pallet's NFT implementation.
-pub type CommodityFor<T, I> = Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>;
-
-impl<CommodityId, CommodityInfo> NFT for Commodity<CommodityId, CommodityInfo> {
-    type Id = CommodityId;
-    type Info = CommodityInfo;
-}
-
-// Needed to maintain a sorted list.
-impl<CommodityId: Ord, CommodityInfo: Eq> Ord for Commodity<CommodityId, CommodityInfo> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.id.cmp(&other.id)
-    }
-}
-
-impl<CommodityId: Ord, CommodityInfo> PartialOrd for Commodity<CommodityId, CommodityInfo> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.id.cmp(&other.id))
-    }
-}
-
-impl<CommodityId: Eq, CommodityInfo> PartialEq for Commodity<CommodityId, CommodityInfo> {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
-}
+/// Associates a commodity with its ID.
+pub type Commodity<T, I> = (CommodityId<T>, <T as Trait<I>>::CommodityInfo);
 
 decl_storage! {
     trait Store for Module<T: Trait<I>, I: Instance = DefaultInstance> as Commodity {
@@ -120,7 +82,7 @@ decl_storage! {
         /// The total number of this type of commodity owned by an account.
         TotalForAccount get(fn total_for_account): map hasher(blake2_128_concat) T::AccountId => u64 = 0;
         /// A mapping from an account to a list of all of the commodities of this type that are owned by it.
-        CommoditiesForAccount get(fn commodities_for_account): map hasher(blake2_128_concat) T::AccountId => Vec<CommodityFor<T, I>>;
+        CommoditiesForAccount get(fn commodities_for_account): map hasher(blake2_128_concat) T::AccountId => Vec<Commodity<T, I>>;
         /// A mapping from a commodity ID to the account that owns it.
         AccountForCommodity get(fn account_for_commodity): map hasher(identity) CommodityId<T> => T::AccountId;
     }
@@ -130,7 +92,7 @@ decl_storage! {
         build(|config: &GenesisConfig<T, I>| {
             for (who, assets) in config.balances.iter() {
                 for asset in assets {
-                    match <Module::<T, I> as UniqueAssets::<Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>>>::mint(who, asset.clone()) {
+                    match <Module::<T, I> as UniqueAssets::<T::AccountId>>::mint(who, asset.clone()) {
                         Ok(_) => {}
                         Err(err) => { panic!(err) },
                     }
@@ -237,10 +199,9 @@ decl_module! {
     }
 }
 
-impl<T: Trait<I>, I: Instance>
-    UniqueAssets<Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>> for Module<T, I>
-{
-    type AccountId = <T as frame_system::Trait>::AccountId;
+impl<T: Trait<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
+    type AssetId = CommodityId<T>;
+    type AssetInfo = T::CommodityInfo;
     type AssetLimit = T::CommodityLimit;
     type UserAssetLimit = T::UserCommodityLimit;
 
@@ -256,9 +217,7 @@ impl<T: Trait<I>, I: Instance>
         Self::total_for_account(account)
     }
 
-    fn assets_for_account(
-        account: &T::AccountId,
-    ) -> Vec<Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>> {
+    fn assets_for_account(account: &T::AccountId) -> Vec<Commodity<T, I>> {
         Self::commodities_for_account(account)
     }
 
@@ -287,10 +246,7 @@ impl<T: Trait<I>, I: Instance>
             Error::<T, I>::TooManyCommodities
         );
 
-        let new_commodity = Commodity {
-            id: commodity_id,
-            commodity: commodity_info,
-        };
+        let new_commodity = (commodity_id, commodity_info);
 
         Total::<I>::mutate(|total| *total += 1);
         TotalForAccount::<T, I>::mutate(owner_account, |total| *total += 1);
@@ -312,10 +268,7 @@ impl<T: Trait<I>, I: Instance>
             Error::<T, I>::NonexistentCommodity
         );
 
-        let burn_commodity = Commodity::<CommodityId<T>, <T as Trait<I>>::CommodityInfo> {
-            id: *commodity_id,
-            commodity: <T as Trait<I>>::CommodityInfo::default(),
-        };
+        let burn_commodity = (*commodity_id, <T as Trait<I>>::CommodityInfo::default());
 
         Total::<I>::mutate(|total| *total -= 1);
         Burned::<I>::mutate(|total| *total += 1);
@@ -346,10 +299,7 @@ impl<T: Trait<I>, I: Instance>
             Error::<T, I>::TooManyCommoditiesForAccount
         );
 
-        let xfer_commodity = Commodity::<CommodityId<T>, <T as Trait<I>>::CommodityInfo> {
-            id: *commodity_id,
-            commodity: <T as Trait<I>>::CommodityInfo::default(),
-        };
+        let xfer_commodity = (*commodity_id, <T as Trait<I>>::CommodityInfo::default());
 
         TotalForAccount::<T, I>::mutate(&owner, |total| *total -= 1);
         TotalForAccount::<T, I>::mutate(dest_account, |total| *total += 1);

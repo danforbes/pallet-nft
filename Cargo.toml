@@ -1,7 +1,7 @@
 [package]
 edition = '2018'
 name = 'pallet-commodities'
-version = '1.0.0-rc6'
+version = '1.0.0-rc7'
 authors = ['Dan Forbes <dan@parity.io>']
 license = 'Unlicense'
 description = 'A unique asset (NFT) interface and a Substrate FRAME implementation optimized for commodity assets.'

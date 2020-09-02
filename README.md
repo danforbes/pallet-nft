@@ -2,33 +2,24 @@
 
 # Commodities FRAME Pallet: NFTs for Substrate
 
-This is a [FRAME](https://substrate.dev/docs/en/knowledgebase/runtime/frame) pallet that defines and implements a
-[non-fungible token (NFT)](https://en.wikipedia.org/wiki/Non-fungible_token) interface as well as an interface for
-managing a set of such assets, including asset ownership, creation, destruction and transfer.
+This is a [FRAME](https://substrate.dev/docs/en/knowledgebase/runtime/frame) pallet that defines and implements an
+interface for managing a set of [non-fungible tokens (NFTs)](https://en.wikipedia.org/wiki/Non-fungible_token). Assets
+have an owner and can be created, destroyed and transferred.
 
 ## Interface
 
-This package defines [two public traits](src/nft.rs) (Rust interfaces) for working with NFTs: the `NFT` trait and the
-`UniqueAssets` trait.
-
-## `NFT` Trait
-
-The `NFT` trait uses two types to define a unique asset:
-
-- `ID`: a URI for the asset
-- `Info`: a set of attributes that uniquely describe the asset
-
-Assets with equivalent attributes (as defined by the `Info` type) **must** have an equal `ID` and assets with different
-`ID`s **must not** have equivalent attributes.
+This package defines [a public trait](src/nft.rs) (Rust interface) for working with NFTs: the `UniqueAssets` trait.
 
 ## `UniqueAssets` Trait
 
-This trait is generic with respect to a type that implements the `NFT` trait; it defines the type abstractions and
-public functions needed to manage a set of unique assets.
+This trait is generic with respect to a type that is used to identify asset owners - the `AccountId` type. Assets with
+equivalent attributes (as defined by the `AssetInfo` type) **must** have equal `AssetId`s and assets with different
+`AssetId`s **must not** have equivalent attributes.
 
 ### Types
 
-- `AccountId`: the type used to identify asset owners
+- `AssetId`: a URI for an asset
+- `AssetInfo`: a set of attributes that uniquely describes an asset
 - `AssetLimit`: the maximum number of assets, expressed as an unsigned 128-bit integer, that may exist in this set at
   once
 - `UserAssetLimit`: the maximum number of assets, expressed as an unsigned 64-bit integer, that any single account may
@@ -40,15 +31,15 @@ public functions needed to manage a set of unique assets.
 - `burned() -> u128`: returns the total number of assets from this set that have been burned
 - `total_for_account(AccountId) -> u64`: returns the total number of asset from this set that are owned by a given
   account
-- `assets_for_account(AccountId) -> Vec<NFT>`: returns the list of assets from this set that are owned by a given
-  account
-- `owner_of(NFT::Id) -> AccountId`: returns the ID of the account that owns the given asset from this set
-- `mint(AccountId, NFT::Info) -> Result<AssetID, DispatchError>`: use the given attributes to create a new unique asset
+- `assets_for_account(AccountId) -> Vec<(AssetId, AssetInfo)>`: returns the list of assets from this set that are owned
+  by a given account
+- `owner_of(AssetId) -> AccountId`: returns the ID of the account that owns the given asset from this set
+- `mint(AccountId, AssetInfo) -> Result<AssetID, DispatchError>`: use the given attributes to create a new unique asset
   that belongs to this set and assign ownership of it to the given account
   - Failure cases: asset duplication, asset limit reached for set, asset limit for this set reached for account
-- `burn(NFT::Id) -> DispatchResult`: destroy the given asset
+- `burn(AssetId) -> DispatchResult`: destroy the given asset
   - Failure cases: asset doesn't exist
-- `transfer(AccountId, NFT::Id) -> DispatchResult`: transfer ownership of the given asset from this set from its current
+- `transfer(AccountId, AssetId) -> DispatchResult`: transfer ownership of the given asset from this set from its current
   owner to a given target account
   - Failure cases: asset doesn't exist, asset limit for this set reached for target account
 
