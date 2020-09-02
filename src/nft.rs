@@ -11,40 +11,42 @@
 //!
 //! This abstraction is implemented by [pallet_commodities::Module](../struct.Module.html).
 
-use frame_support::{
-    dispatch::{result::Result, DispatchError, DispatchResult},
-    traits::Get,
-};
+use frame_support::dispatch::DispatchResult;
 use sp_std::vec::Vec;
 
 /// A unique asset; assets with equivalent attributes (as defined by the Info type) **must** have an
 /// equal ID and assets with different IDs **must not** have equivalent attributes.
-pub trait NFT {
-    /// The type used to identify unique assets.
-    type Id;
-    /// The attributes that distinguish unique assets.
-    type Info;
-}
+// pub trait NFT {
+//     /// The type used to identify unique assets.
+//     type Id;
+//     /// The attributes that distinguish unique assets.
+//     type Info;
+// }
 
 /// An interface over a set of unique assets.
-pub trait UniqueAssets<Asset: NFT> {
-    /// The type used to identify asset owners.
-    type AccountId;
-    /// The maximum number of this type of asset that may exist (minted - burned).
-    type AssetLimit: Get<u128>;
-    /// The maximum number of this type of asset that any single account may own.
-    type UserAssetLimit: Get<u64>;
+pub trait UniqueAssets<AccountId> {
+    /// The attributes that distinguish unique assets.
+    type Info;
+    ///
+    type Id;
+
+    // TODO maybe in the future
+    // Currently u64 and u128 are hard-coded in the trait
+    // Making this type generic would be more like the Currency trait. Meh.
+    // Using the same type for both counters makes sense. Currently, a single user can't own
+    // ALL the kitties
+    // type Balance: AtLeast32BitUnsigned + FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default;
 
     /// The total number of this type of asset that exists (minted - burned).
     fn total() -> u128;
     /// The total number of this type of asset that has been burned (may overflow).
     fn burned() -> u128;
     /// The total number of this type of asset owned by an account.
-    fn total_for_account(account: &Self::AccountId) -> u64;
+    fn total_for_account(account: &AccountId) -> u64;
     /// The set of unique assets owned by an account.
-    fn assets_for_account(account: &Self::AccountId) -> Vec<Asset>;
+    fn assets_for_account(account: &AccountId) -> Vec<Self::Id>;
     /// The ID of the account that owns an asset.
-    fn owner_of(asset_id: &Asset::Id) -> Self::AccountId;
+    fn owner_of(asset_id: &Self::Id) -> AccountId;
 
     /// Use the provided asset info to create a new unique asset for the specified user.
     /// This method **must** return an error in the following cases:
@@ -52,16 +54,16 @@ pub trait UniqueAssets<Asset: NFT> {
     /// - The specified owner account has already reached the user asset limit.
     /// - The total asset limit has already been reached.
     fn mint(
-        owner_account: &Self::AccountId,
-        asset_info: Asset::Info,
-    ) -> Result<Asset::Id, DispatchError>;
+        owner_account: &AccountId,
+        asset_info: Self::Info,
+    ) -> DispatchResult;
     /// Destroy an asset.
     /// This method **must** return an error in the following case:
     /// - The asset with the specified ID does not exist.
-    fn burn(asset_id: &Asset::Id) -> DispatchResult;
+    fn burn(asset_id: &Self::Id) -> DispatchResult;
     /// Transfer ownership of an asset to another account.
     /// This method **must** return an error in the following cases:
     /// - The asset with the specified ID does not exist.
     /// - The destination account has already reached the user asset limit.
-    fn transfer(dest_account: &Self::AccountId, asset_id: &Asset::Id) -> DispatchResult;
+    fn transfer(dest_account: &AccountId, asset_id: &Self::Id) -> DispatchResult;
 }

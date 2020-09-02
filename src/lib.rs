@@ -36,17 +36,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode, FullCodec};
+use codec::FullCodec;
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
     traits::{EnsureOrigin, Get},
     Hashable,
 };
 use frame_system::ensure_signed;
-use sp_runtime::{
-    traits::{Hash, Member},
-    RuntimeDebug,
-};
+use sp_runtime::traits::{Hash, Member};
 use sp_std::{
     cmp::{Eq, Ordering},
     fmt::Debug,
@@ -54,7 +51,7 @@ use sp_std::{
 };
 
 pub mod nft;
-pub use crate::nft::{UniqueAssets, NFT};
+pub use crate::nft::UniqueAssets;
 
 #[cfg(test)]
 mod mock;
@@ -71,45 +68,40 @@ pub trait Trait<I = DefaultInstance>: frame_system::Trait {
     type CommodityLimit: Get<u128>;
     /// The maximum number of this type of commodity that any single account may own.
     type UserCommodityLimit: Get<u64>;
+    /// The ubiquitous event type
     type Event: From<Event<Self, I>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
 /// The runtime system's hashing algorithm is used to uniquely identify commodities.
 pub type CommodityId<T> = <T as frame_system::Trait>::Hash;
 
-/// A generic definition of an NFT that will be used by this pallet.
-#[derive(Encode, Decode, Clone, Eq, RuntimeDebug)]
-pub struct Commodity<Hash, CommodityInfo> {
-    pub id: Hash,
-    pub commodity: CommodityInfo,
-}
 
-/// An alias for this pallet's NFT implementation.
-pub type CommodityFor<T, I> = Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>;
+// /// An alias for this pallet's NFT implementation.
+// pub type CommodityFor<T, I> = Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>;
 
-impl<CommodityId, CommodityInfo> NFT for Commodity<CommodityId, CommodityInfo> {
-    type Id = CommodityId;
-    type Info = CommodityInfo;
-}
+// impl<CommodityId, CommodityInfo> NFT for Commodity<CommodityId, CommodityInfo> {
+//     type Id = CommodityId;
+//     type Info = CommodityInfo;
+// }
 
 // Needed to maintain a sorted list.
-impl<CommodityId: Ord, CommodityInfo: Eq> Ord for Commodity<CommodityId, CommodityInfo> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.id.cmp(&other.id)
-    }
-}
+// impl<CommodityId: Ord, CommodityInfo: Eq> Ord for Commodity<CommodityId, CommodityInfo> {
+//     fn cmp(&self, other: &Self) -> Ordering {
+//         self.id.cmp(&other.id)
+//     }
+// }
 
-impl<CommodityId: Ord, CommodityInfo> PartialOrd for Commodity<CommodityId, CommodityInfo> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.id.cmp(&other.id))
-    }
-}
+// impl<CommodityId: Ord, CommodityInfo> PartialOrd for Commodity<CommodityId, CommodityInfo> {
+//     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+//         Some(self.id.cmp(&other.id))
+//     }
+// }
 
-impl<CommodityId: Eq, CommodityInfo> PartialEq for Commodity<CommodityId, CommodityInfo> {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
-}
+// impl<CommodityId: Eq, CommodityInfo> PartialEq for Commodity<CommodityId, CommodityInfo> {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.id == other.id
+//     }
+// }
 
 decl_storage! {
     trait Store for Module<T: Trait<I>, I: Instance = DefaultInstance> as Commodity {
@@ -120,9 +112,11 @@ decl_storage! {
         /// The total number of this type of commodity owned by an account.
         TotalForAccount get(fn total_for_account): map hasher(blake2_128_concat) T::AccountId => u64 = 0;
         /// A mapping from an account to a list of all of the commodities of this type that are owned by it.
-        CommoditiesForAccount get(fn commodities_for_account): map hasher(blake2_128_concat) T::AccountId => Vec<CommodityFor<T, I>>;
+        CommoditiesForAccount get(fn commodities_for_account): map hasher(blake2_128_concat) T::AccountId => Vec<CommodityId<T>>;
         /// A mapping from a commodity ID to the account that owns it.
         AccountForCommodity get(fn account_for_commodity): map hasher(identity) CommodityId<T> => T::AccountId;
+        /// The set of all currently existing commodities
+        Commodities get(fn commodities): map hasher(identity) CommodityId<T> => T::CommodityInfo;
     }
 
     add_extra_genesis {
@@ -130,7 +124,7 @@ decl_storage! {
         build(|config: &GenesisConfig<T, I>| {
             for (who, assets) in config.balances.iter() {
                 for asset in assets {
-                    match <Module::<T, I> as UniqueAssets::<Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>>>::mint(who, asset.clone()) {
+                    match <Module::<T, I> as UniqueAssets::<T::AccountId>>::mint(who, asset.clone()) {
                         Ok(_) => {}
                         Err(err) => { panic!(err) },
                     }
@@ -143,7 +137,7 @@ decl_storage! {
 decl_event!(
     pub enum Event<T, I = DefaultInstance>
     where
-        CommodityId = <T as frame_system::Trait>::Hash,
+        CommodityId = CommodityId<T>,
         AccountId = <T as frame_system::Trait>::AccountId,
     {
         /// The commodity has been burned.
@@ -194,9 +188,7 @@ decl_module! {
         pub fn mint(origin, owner_account: T::AccountId, commodity_info: T::CommodityInfo) -> dispatch::DispatchResult {
             T::CommodityAdmin::ensure_origin(origin)?;
 
-            let commodity_id = <Self as UniqueAssets<_>>::mint(&owner_account, commodity_info)?;
-            Self::deposit_event(RawEvent::Minted(commodity_id, owner_account.clone()));
-            Ok(())
+            <Self as UniqueAssets<_>>::mint(&owner_account, commodity_info)
         }
 
         /// Destroy the specified commodity.
@@ -210,9 +202,7 @@ decl_module! {
             let who = ensure_signed(origin)?;
             ensure!(who == Self::account_for_commodity(&commodity_id), Error::<T, I>::NotCommodityOwner);
 
-            <Self as UniqueAssets<_>>::burn(&commodity_id)?;
-            Self::deposit_event(RawEvent::Burned(commodity_id.clone()));
-            Ok(())
+            <Self as UniqueAssets<_>>::burn(&commodity_id)
         }
 
         /// Transfer a commodity to a new owner.
@@ -230,19 +220,18 @@ decl_module! {
             let who = ensure_signed(origin)?;
             ensure!(who == Self::account_for_commodity(&commodity_id), Error::<T, I>::NotCommodityOwner);
 
-            <Self as UniqueAssets<_>>::transfer(&dest_account, &commodity_id)?;
-            Self::deposit_event(RawEvent::Transferred(commodity_id.clone(), dest_account.clone()));
-            Ok(())
+            <Self as UniqueAssets<_>>::transfer(&dest_account, &commodity_id)
         }
     }
 }
 
-impl<T: Trait<I>, I: Instance>
-    UniqueAssets<Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>> for Module<T, I>
-{
-    type AccountId = <T as frame_system::Trait>::AccountId;
-    type AssetLimit = T::CommodityLimit;
-    type UserAssetLimit = T::UserCommodityLimit;
+impl<T: Trait<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
+
+    /// The info that describes an individual unique asset
+    /// eg. For kitties, its birthday, parents, genes
+    /// for baseball cards, it's player name, year, team
+    type Info = T::CommodityInfo;
+    type Id =CommodityId<T>;
 
     fn total() -> u128 {
         Self::total()
@@ -258,7 +247,7 @@ impl<T: Trait<I>, I: Instance>
 
     fn assets_for_account(
         account: &T::AccountId,
-    ) -> Vec<Commodity<CommodityId<T>, <T as Trait<I>>::CommodityInfo>> {
+    ) -> Vec<Self::Id> {
         Self::commodities_for_account(account)
     }
 
@@ -268,9 +257,9 @@ impl<T: Trait<I>, I: Instance>
 
     fn mint(
         owner_account: &T::AccountId,
-        commodity_info: <T as Trait<I>>::CommodityInfo,
-    ) -> dispatch::result::Result<CommodityId<T>, dispatch::DispatchError> {
-        let commodity_id = T::Hashing::hash_of(&commodity_info);
+        commodity: Self::Info,
+    ) -> dispatch::DispatchResult {
+        let commodity_id = T::Hashing::hash_of(&commodity);
 
         ensure!(
             !AccountForCommodity::<T, I>::contains_key(&commodity_id),
@@ -287,22 +276,19 @@ impl<T: Trait<I>, I: Instance>
             Error::<T, I>::TooManyCommodities
         );
 
-        let new_commodity = Commodity {
-            id: commodity_id,
-            commodity: commodity_info,
-        };
-
         Total::<I>::mutate(|total| *total += 1);
         TotalForAccount::<T, I>::mutate(owner_account, |total| *total += 1);
         CommoditiesForAccount::<T, I>::mutate(owner_account, |commodities| {
-            match commodities.binary_search(&new_commodity) {
+            match commodities.binary_search(&commodity_id) {
                 Ok(_pos) => {} // should never happen
-                Err(pos) => commodities.insert(pos, new_commodity),
+                Err(pos) => commodities.insert(pos, commodity_id),
             }
         });
-        AccountForCommodity::<T, I>::insert(commodity_id, &owner_account);
+        AccountForCommodity::<T, I>::insert(&commodity_id, &owner_account);
+        Commodities::<T, I>::insert(commodity_id, commodity);
 
-        Ok(commodity_id)
+        Self::deposit_event(RawEvent::Minted(commodity_id, owner_account.clone()));
+        Ok(())
     }
 
     fn burn(commodity_id: &CommodityId<T>) -> dispatch::DispatchResult {
@@ -312,22 +298,19 @@ impl<T: Trait<I>, I: Instance>
             Error::<T, I>::NonexistentCommodity
         );
 
-        let burn_commodity = Commodity::<CommodityId<T>, <T as Trait<I>>::CommodityInfo> {
-            id: *commodity_id,
-            commodity: <T as Trait<I>>::CommodityInfo::default(),
-        };
-
         Total::<I>::mutate(|total| *total -= 1);
         Burned::<I>::mutate(|total| *total += 1);
         TotalForAccount::<T, I>::mutate(&owner, |total| *total -= 1);
         CommoditiesForAccount::<T, I>::mutate(owner, |commodities| {
             let pos = commodities
-                .binary_search(&burn_commodity)
+                .binary_search(&commodity_id)
                 .expect("We already checked that we have the correct owner; qed");
             commodities.remove(pos);
         });
         AccountForCommodity::<T, I>::remove(&commodity_id);
+        Commodities::<T, I>::remove(commodity_id);
 
+        Self::deposit_event(RawEvent::Burned(commodity_id.clone()));
         Ok(())
     }
 
@@ -346,16 +329,11 @@ impl<T: Trait<I>, I: Instance>
             Error::<T, I>::TooManyCommoditiesForAccount
         );
 
-        let xfer_commodity = Commodity::<CommodityId<T>, <T as Trait<I>>::CommodityInfo> {
-            id: *commodity_id,
-            commodity: <T as Trait<I>>::CommodityInfo::default(),
-        };
-
         TotalForAccount::<T, I>::mutate(&owner, |total| *total -= 1);
         TotalForAccount::<T, I>::mutate(dest_account, |total| *total += 1);
         let commodity = CommoditiesForAccount::<T, I>::mutate(owner, |commodities| {
             let pos = commodities
-                .binary_search(&xfer_commodity)
+                .binary_search(&commodity_id)
                 .expect("We already checked that we have the correct owner; qed");
             commodities.remove(pos)
         });
@@ -367,6 +345,7 @@ impl<T: Trait<I>, I: Instance>
         });
         AccountForCommodity::<T, I>::insert(&commodity_id, &dest_account);
 
+        Self::deposit_event(RawEvent::Transferred(commodity_id.clone(), dest_account.clone()));
         Ok(())
     }
 }
