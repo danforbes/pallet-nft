@@ -1,7 +1,7 @@
 [package]
 edition = '2018'
 name = 'pallet-commodities'
-version = '1.0.0-rc7'
+version = '1.0.0'
 authors = ['Dan Forbes <dan@parity.io>']
 license = 'Unlicense'
 description = 'A unique asset (NFT) interface and a Substrate FRAME implementation optimized for commodity assets.'
@@ -11,53 +11,22 @@ readme = 'README.md'
 keywords = ['substrate', 'frame', 'nft', 'blockchain', 'asset']
 categories = ['cryptography::cryptocurrencies', 'data-structures', 'no-std']
 
-[dependencies]
-serde = { version = "1.0.101", optional = true }
-
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = '1.3.1'
-
-[dependencies.frame-support]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dependencies.frame-system]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dependencies.sp-std]
-git = 'https://github.com/paritytech/substrate.git'
-default-features = false
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dev-dependencies.sp-core]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dev-dependencies.sp-io]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+serde = { version = "1.0.116", optional = true }
+
+# Substrate dependencies
+codec = { default-features = false, features = ['derive'], package = 'parity-scale-codec', version = '1.3.5' }
+frame-support = { default-features = false, version = '2.0.0' }
+frame-system = { default-features = false, version = '2.0.0' }
+sp-runtime = { default-features = false, version = '2.0.0' }
+sp-std = { default-features = false, version = '2.0.0' }
+
+[dev-dependencies]
+sp-core = { default-features = false, version = '2.0.0' }
+sp-io = { default-features = false, version = '2.0.0' }
 
 [features]
 default = ['std']

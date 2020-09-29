@@ -1,4 +1,4 @@
-[![Compatible with Substrate v2.0.0-rc6](https://img.shields.io/badge/Substrate-v2.0.0--rc6-E6007A)](https://github.com/paritytech/substrate/releases/tag/v2.0.0-rc6)
+[![Compatible with Substrate v2.0.0](https://img.shields.io/badge/Substrate-v2.0.0-E6007A)](https://github.com/paritytech/substrate/releases/tag/v2.0.0)
 
 # Commodities FRAME Pallet: NFTs for Substrate
 
