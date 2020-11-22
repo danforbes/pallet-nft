@@ -53,10 +53,10 @@ pub trait UniqueAssets<AccountId> {
     /// Destroy an asset.
     /// This method **must** return an error in the following case:
     /// - The asset with the specified ID does not exist.
-    fn burn(asset_id: &Self::AssetId) -> DispatchResult;
+    fn burn(asset_id: &Self::AssetId, asset_info: &Self::AssetInfo) -> DispatchResult;
     /// Transfer ownership of an asset to another account.
     /// This method **must** return an error in the following cases:
     /// - The asset with the specified ID does not exist.
     /// - The destination account has already reached the user asset limit.
-    fn transfer(dest_account: &AccountId, asset_id: &Self::AssetId) -> DispatchResult;
+    fn transfer(dest_account: &AccountId, asset_id: &Self::AssetId, asset_info: &Self::AssetInfo) -> DispatchResult;
 }

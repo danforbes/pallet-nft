@@ -168,11 +168,11 @@ decl_module! {
         /// - `commodity_id`: The hash (calculated by the runtime system's hashing algorithm)
         ///   of the info that defines the commodity to destroy.
         #[weight = 10_000]
-        pub fn burn(origin, commodity_id: CommodityId<T>) -> dispatch::DispatchResult {
+        pub fn burn(origin, commodity_id: CommodityId<T>, commodity_info: T::CommodityInfo) -> dispatch::DispatchResult {
             let who = ensure_signed(origin)?;
             ensure!(who == Self::account_for_commodity(&commodity_id), Error::<T, I>::NotCommodityOwner);
 
-            <Self as UniqueAssets<_>>::burn(&commodity_id)?;
+            <Self as UniqueAssets<_>>::burn(&commodity_id, &commodity_info)?;
             Self::deposit_event(RawEvent::Burned(commodity_id.clone()));
             Ok(())
         }
@@ -188,11 +188,11 @@ decl_module! {
         /// - `commodity_id`: The hash (calculated by the runtime system's hashing algorithm)
         ///   of the info that defines the commodity to destroy.
         #[weight = 10_000]
-        pub fn transfer(origin, dest_account: T::AccountId, commodity_id: CommodityId<T>) -> dispatch::DispatchResult {
+        pub fn transfer(origin, dest_account: T::AccountId, commodity_id: CommodityId<T>, commodity_info: T::CommodityInfo) -> dispatch::DispatchResult {
             let who = ensure_signed(origin)?;
             ensure!(who == Self::account_for_commodity(&commodity_id), Error::<T, I>::NotCommodityOwner);
 
-            <Self as UniqueAssets<_>>::transfer(&dest_account, &commodity_id)?;
+            <Self as UniqueAssets<_>>::transfer(&dest_account, &commodity_id, &commodity_info)?;
             Self::deposit_event(RawEvent::Transferred(commodity_id.clone(), dest_account.clone()));
             Ok(())
         }
@@ -261,14 +261,14 @@ impl<T: Trait<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
         Ok(commodity_id)
     }
 
-    fn burn(commodity_id: &CommodityId<T>) -> dispatch::DispatchResult {
+    fn burn(commodity_id: &CommodityId<T>, commodity_info: &<T as Trait<I>>::CommodityInfo) -> dispatch::DispatchResult {
         let owner = Self::owner_of(commodity_id);
         ensure!(
             owner != T::AccountId::default(),
             Error::<T, I>::NonexistentCommodity
         );
 
-        let burn_commodity = (*commodity_id, <T as Trait<I>>::CommodityInfo::default());
+        let burn_commodity = (*commodity_id, commodity_info.clone());
 
         Total::<I>::mutate(|total| *total -= 1);
         Burned::<I>::mutate(|total| *total += 1);
@@ -287,6 +287,7 @@ impl<T: Trait<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
     fn transfer(
         dest_account: &T::AccountId,
         commodity_id: &CommodityId<T>,
+		commodity_info: &<T as Trait<I>>::CommodityInfo
     ) -> dispatch::DispatchResult {
         let owner = Self::owner_of(&commodity_id);
         ensure!(
@@ -299,7 +300,7 @@ impl<T: Trait<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
             Error::<T, I>::TooManyCommoditiesForAccount
         );
 
-        let xfer_commodity = (*commodity_id, <T as Trait<I>>::CommodityInfo::default());
+        let xfer_commodity = (*commodity_id, commodity_info.clone());
 
         TotalForAccount::<T, I>::mutate(&owner, |total| *total -= 1);
         TotalForAccount::<T, I>::mutate(dest_account, |total| *total += 1);
