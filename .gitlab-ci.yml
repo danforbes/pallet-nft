@@ -1,0 +1,24 @@
+.caching_rust: &caching_rust
+  cache:
+    paths:
+      - .cargo/
+      - .cache/sccache
+
+stages:
+  - check-test
+
+rust-latest:
+  stage: check-test
+  image: paritytech/ci-linux:production
+  <<: *caching_rust
+  before_script:
+    - export CARGO_HOME="${PWD}/.cargo"
+    - echo $CARGO_HOME
+    - export SCCACHE_DIR="${PWD}/.cache/sccache"
+    - echo $SCCACHE_DIR
+    - rustup show
+    - cargo --version
+    - sccache -s
+  script:
+    - cargo check
+    - cargo test
