@@ -55,7 +55,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-pub trait Trait<I = DefaultInstance>: frame_system::Trait {
+pub trait Config<I = DefaultInstance>: frame_system::Config {
     /// The dispatch origin that is able to mint new instances of this type of commodity.
     type CommodityAdmin: EnsureOrigin<Self::Origin>;
     /// The data type that is used to describe this type of commodity.
@@ -64,17 +64,17 @@ pub trait Trait<I = DefaultInstance>: frame_system::Trait {
     type CommodityLimit: Get<u128>;
     /// The maximum number of this type of commodity that any single account may own.
     type UserCommodityLimit: Get<u64>;
-    type Event: From<Event<Self, I>> + Into<<Self as frame_system::Trait>::Event>;
+    type Event: From<Event<Self, I>> + Into<<Self as frame_system::Config>::Event>;
 }
 
 /// The runtime system's hashing algorithm is used to uniquely identify commodities.
-pub type CommodityId<T> = <T as frame_system::Trait>::Hash;
+pub type CommodityId<T> = <T as frame_system::Config>::Hash;
 
 /// Associates a commodity with its ID.
-pub type Commodity<T, I> = (CommodityId<T>, <T as Trait<I>>::CommodityInfo);
+pub type Commodity<T, I> = (CommodityId<T>, <T as Config<I>>::CommodityInfo);
 
 decl_storage! {
-    trait Store for Module<T: Trait<I>, I: Instance = DefaultInstance> as Commodity {
+    trait Store for Module<T: Config<I>, I: Instance = DefaultInstance> as Commodity {
         /// The total number of this type of commodity that exists (minted - burned).
         Total get(fn total): u128 = 0;
         /// The total number of this type of commodity that has been burned (may overflow).
@@ -94,7 +94,7 @@ decl_storage! {
                 for asset in assets {
                     match <Module::<T, I> as UniqueAssets::<T::AccountId>>::mint(who, asset.clone()) {
                         Ok(_) => {}
-                        Err(err) => { panic!(err) },
+                        Err(err) => { std::panic::panic_any(err) },
                     }
                 }
             }
@@ -105,8 +105,8 @@ decl_storage! {
 decl_event!(
     pub enum Event<T, I = DefaultInstance>
     where
-        CommodityId = <T as frame_system::Trait>::Hash,
-        AccountId = <T as frame_system::Trait>::AccountId,
+        CommodityId = <T as frame_system::Config>::Hash,
+        AccountId = <T as frame_system::Config>::AccountId,
     {
         /// The commodity has been burned.
         Burned(CommodityId),
@@ -118,7 +118,7 @@ decl_event!(
 );
 
 decl_error! {
-    pub enum Error for Module<T: Trait<I>, I: Instance> {
+    pub enum Error for Module<T: Config<I>, I: Instance> {
         // Thrown when there is an attempt to mint a duplicate commodity.
         CommodityExists,
         // Thrown when there is an attempt to burn or transfer a nonexistent commodity.
@@ -135,7 +135,7 @@ decl_error! {
 }
 
 decl_module! {
-    pub struct Module<T: Trait<I>, I: Instance = DefaultInstance> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config<I>, I: Instance = DefaultInstance> for enum Call where origin: T::Origin {
         type Error = Error<T, I>;
         fn deposit_event() = default;
 
@@ -199,7 +199,7 @@ decl_module! {
     }
 }
 
-impl<T: Trait<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
+impl<T: Config<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
     type AssetId = CommodityId<T>;
     type AssetInfo = T::CommodityInfo;
     type AssetLimit = T::CommodityLimit;
@@ -227,7 +227,7 @@ impl<T: Trait<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
 
     fn mint(
         owner_account: &T::AccountId,
-        commodity_info: <T as Trait<I>>::CommodityInfo,
+        commodity_info: <T as Config<I>>::CommodityInfo,
     ) -> dispatch::result::Result<CommodityId<T>, dispatch::DispatchError> {
         let commodity_id = T::Hashing::hash_of(&commodity_info);
 
@@ -268,7 +268,7 @@ impl<T: Trait<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
             Error::<T, I>::NonexistentCommodity
         );
 
-        let burn_commodity = (*commodity_id, <T as Trait<I>>::CommodityInfo::default());
+        let burn_commodity = (*commodity_id, <T as Config<I>>::CommodityInfo::default());
 
         Total::<I>::mutate(|total| *total -= 1);
         Burned::<I>::mutate(|total| *total += 1);
@@ -299,7 +299,7 @@ impl<T: Trait<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
             Error::<T, I>::TooManyCommoditiesForAccount
         );
 
-        let xfer_commodity = (*commodity_id, <T as Trait<I>>::CommodityInfo::default());
+        let xfer_commodity = (*commodity_id, <T as Config<I>>::CommodityInfo::default());
 
         TotalForAccount::<T, I>::mutate(&owner, |total| *total -= 1);
         TotalForAccount::<T, I>::mutate(dest_account, |total| *total += 1);
