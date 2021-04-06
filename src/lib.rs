@@ -268,14 +268,12 @@ impl<T: Config<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
             Error::<T, I>::NonexistentCommodity
         );
 
-        let burn_commodity = (*commodity_id, <T as Config<I>>::CommodityInfo::default());
-
         Total::<I>::mutate(|total| *total -= 1);
         Burned::<I>::mutate(|total| *total += 1);
         TotalForAccount::<T, I>::mutate(&owner, |total| *total -= 1);
         CommoditiesForAccount::<T, I>::mutate(owner, |commodities| {
             let pos = commodities
-                .binary_search(&burn_commodity)
+                .binary_search_by(|probe| probe.0.cmp(commodity_id))
                 .expect("We already checked that we have the correct owner; qed");
             commodities.remove(pos);
         });
@@ -299,13 +297,11 @@ impl<T: Config<I>, I: Instance> UniqueAssets<T::AccountId> for Module<T, I> {
             Error::<T, I>::TooManyCommoditiesForAccount
         );
 
-        let xfer_commodity = (*commodity_id, <T as Config<I>>::CommodityInfo::default());
-
         TotalForAccount::<T, I>::mutate(&owner, |total| *total -= 1);
         TotalForAccount::<T, I>::mutate(dest_account, |total| *total += 1);
         let commodity = CommoditiesForAccount::<T, I>::mutate(owner, |commodities| {
             let pos = commodities
-                .binary_search(&xfer_commodity)
+                .binary_search_by(|probe| probe.0.cmp(commodity_id))
                 .expect("We already checked that we have the correct owner; qed");
             commodities.remove(pos)
         });
