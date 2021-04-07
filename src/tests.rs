@@ -94,11 +94,12 @@ fn mint_err_max() {
 #[test]
 fn burn() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SUT::mint(Origin::root(), 1, Vec::<u8>::default()));
-        assert_ok!(SUT::burn(
-            Origin::signed(1),
-            Vec::<u8>::default().blake2_256().into()
-        ));
+        assert_ok!(SUT::mint(Origin::root(), 1, Vec::<u8>::from("test")));
+        assert_eq!(SUT::total_for_account(1), 1);
+
+        let assets = SUT::assets_for_account(&(1 as u64));
+
+        assert_ok!(SUT::burn(Origin::signed(1), assets[0].0));
 
         assert_eq!(SUT::total(), 0);
         assert_eq!(SUT::burned(), 1);
@@ -136,12 +137,11 @@ fn burn_err_not_exist() {
 #[test]
 fn transfer() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SUT::mint(Origin::root(), 1, Vec::<u8>::default()));
-        assert_ok!(SUT::transfer(
-            Origin::signed(1),
-            2,
-            Vec::<u8>::default().blake2_256().into()
-        ));
+        assert_ok!(SUT::mint(Origin::root(), 1, "test".into()));
+
+        let assets = SUT::assets_for_account(&(1 as u64));
+
+        assert_ok!(SUT::transfer(Origin::signed(1), 2, assets[0].0));
 
         assert_eq!(SUT::total(), 1);
         assert_eq!(SUT::burned(), 0);
@@ -150,13 +150,10 @@ fn transfer() {
         assert_eq!(SUT::commodities_for_account::<u64>(1), vec![]);
         let commodities_for_account = SUT::commodities_for_account::<u64>(2);
         assert_eq!(commodities_for_account.len(), 1);
+        assert_eq!(commodities_for_account[0].0, assets[0].0);
+        assert_eq!(commodities_for_account[0].1, Vec::<u8>::from("test"));
         assert_eq!(
-            commodities_for_account[0].0,
-            Vec::<u8>::default().blake2_256().into()
-        );
-        assert_eq!(commodities_for_account[0].1, Vec::<u8>::default());
-        assert_eq!(
-            SUT::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
+            SUT::account_for_commodity::<H256>(commodities_for_account[0].0),
             2
         );
     });
