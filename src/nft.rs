@@ -11,10 +11,7 @@
 //!
 //! This abstraction is implemented by [pallet_commodities::Module](../struct.Module.html).
 
-use frame_support::{
-    dispatch::{result::Result, DispatchError, DispatchResult},
-    traits::Get,
-};
+use frame_support::{dispatch::DispatchResultWithPostInfo, traits::Get};
 use sp_std::vec::Vec;
 
 /// An interface over a set of unique assets.
@@ -49,14 +46,14 @@ pub trait UniqueAssets<AccountId> {
     fn mint(
         owner_account: &AccountId,
         asset_info: Self::AssetInfo,
-    ) -> Result<Self::AssetId, DispatchError>;
+    ) -> Result<Self::AssetId, sp_runtime::DispatchError>;
     /// Destroy an asset.
     /// This method **must** return an error in the following case:
     /// - The asset with the specified ID does not exist.
-    fn burn(asset_id: &Self::AssetId) -> DispatchResult;
+    fn burn(asset_id: &Self::AssetId) -> DispatchResultWithPostInfo;
     /// Transfer ownership of an asset to another account.
     /// This method **must** return an error in the following cases:
     /// - The asset with the specified ID does not exist.
     /// - The destination account has already reached the user asset limit.
-    fn transfer(dest_account: &AccountId, asset_id: &Self::AssetId) -> DispatchResult;
+    fn transfer(dest_account: &AccountId, asset_id: &Self::AssetId) -> DispatchResultWithPostInfo;
 }
