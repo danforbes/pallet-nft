@@ -75,7 +75,7 @@ pub mod pallet {
         /// The dispatch origin that is able to mint new instances of this type of commodity.
         type CommodityAdmin: EnsureOrigin<Self::Origin>;
         /// The data type that is used to describe this type of commodity.
-        type CommodityInfo: Hashable + Member + Debug + Default + FullCodec + Ord;
+        type CommodityInfo: Hashable + Parameter + Member + Debug + Default + FullCodec + Ord + MaybeSerializeDeserialize;
         /// The maximum number of this type of commodity that may exist (minted - burned).
         type CommodityLimit: Get<u128>;
         /// The maximum number of this type of commodity that any single account may own.
@@ -281,7 +281,7 @@ impl<T: Config> UniqueAssets<T::AccountId> for Module<T> {
         Self::total_for_account(account)
     }
 
-    fn assets_for_account(account: &T::AccountId) -> Vec<Commodity<T>> {
+    fn assets_for_account(account: &T::AccountId) -> Vec<CommodityId<T>> {
         Self::commodities_for_account(account)
     }
 
@@ -292,7 +292,7 @@ impl<T: Config> UniqueAssets<T::AccountId> for Module<T> {
     fn mint(
         owner_account: &T::AccountId,
         commodity_info: <T as Config>::CommodityInfo,
-    ) -> Result<<T as frame_system::Config>::Hash, DispatchError> {
+    ) -> Result<CommodityId<T>, DispatchError> {
         let commodity_id = T::Hashing::hash_of(&commodity_info);
 
         ensure!(
@@ -312,7 +312,7 @@ impl<T: Config> UniqueAssets<T::AccountId> for Module<T> {
 
         let (new_commodity, _) = (commodity_id, commodity_info);
 
-        Total::mutate(|total| *total += 1);
+        Total::<T>::mutate(|total| *total += 1);
         TotalForAccount::<T>::mutate(owner_account, |total| *total += 1);
         CommoditiesForAccount::<T>::mutate(owner_account, |commodities| {
             match commodities.binary_search(&new_commodity) {
