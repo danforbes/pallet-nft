@@ -310,14 +310,12 @@ impl<T: Config> UniqueAssets<T::AccountId> for Module<T> {
             Error::<T>::TooManyCommodities
         );
 
-        let (new_commodity, _) = (commodity_id, commodity_info);
-
         Total::<T>::mutate(|total| *total += 1);
         TotalForAccount::<T>::mutate(owner_account, |total| *total += 1);
         CommoditiesForAccount::<T>::mutate(owner_account, |commodities| {
-            match commodities.binary_search(&new_commodity) {
+            match commodities.binary_search(&commodity_id) {
                 Ok(_pos) => {} // should never happen
-                Err(pos) => commodities.insert(pos, new_commodity),
+                Err(pos) => commodities.insert(pos, commodity_id),
             }
         });
         AccountForCommodity::<T>::insert(commodity_id, &owner_account);

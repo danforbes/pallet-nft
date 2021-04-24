@@ -9,23 +9,10 @@ use sp_runtime::{
     Perbill,
 };
 use crate::pallet::*;
-//use crate as pallet_commodities;
 
 impl_outer_origin! {
     pub enum Origin for Test where system = frame_system {}
 }
-
-// type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<(), (), (), ()>;
-
-// frame_support::impl_outer_event!(
-// 	pub enum Event for Test {
-// 		#[codec(index = 0)] pallet_commodities<T>,
-// 	}
-// );
-// frame_support::impl_runtime_metadata!(
-// 	for Test with modules where Extrinsic = UncheckedExtrinsic
-// 		pallet_commodities::Module as SUT { index 0 } with Storage Call Event,
-// );
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
