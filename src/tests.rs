@@ -9,32 +9,31 @@ use sp_core::H256;
 #[test]
 fn mint() {
     new_test_ext().execute_with(|| {
-        assert_eq!(SUT::total(), 0);
-        assert_eq!(SUT::total_for_account(1), 0);
-        assert_eq!(<SUT as UniqueAssets<_>>::total(), 0);
-        assert_eq!(<SUT as UniqueAssets<_>>::total_for_account(&1), 0);
+        assert_eq!(Commodities::total(), 0);
+        assert_eq!(Commodities::total_for_account(1), 0);
+        assert_eq!(<Commodities as UniqueAssets<_>>::total(), 0);
+        assert_eq!(<Commodities as UniqueAssets<_>>::total_for_account(&1), 0);
         assert_eq!(
-            SUT::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
+            Commodities::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
             0
         );
 
-        assert_ok!(SUT::mint(Origin::root(), 1, Vec::<u8>::default()));
+        assert_ok!(Commodities::mint(Origin::root(), 1, Vec::<u8>::default()));
 
-        assert_eq!(SUT::total(), 1);
-        assert_eq!(<SUT as UniqueAssets<_>>::total(), 1);
-        assert_eq!(SUT::burned(), 0);
-        assert_eq!(<SUT as UniqueAssets<_>>::burned(), 0);
-        assert_eq!(SUT::total_for_account(1), 1);
-        assert_eq!(<SUT as UniqueAssets<_>>::total_for_account(&1), 1);
-        let commodities_for_account = SUT::commodities_for_account::<u64>(1);
+        assert_eq!(Commodities::total(), 1);
+        assert_eq!(<Commodities as UniqueAssets<_>>::total(), 1);
+        assert_eq!(Commodities::burned(), 0);
+        assert_eq!(<Commodities as UniqueAssets<_>>::burned(), 0);
+        assert_eq!(Commodities::total_for_account(1), 1);
+        assert_eq!(<Commodities as UniqueAssets<_>>::total_for_account(&1), 1);
+        let commodities_for_account = Commodities::commodities_for_account::<u64>(1);
         assert_eq!(commodities_for_account.len(), 1);
         assert_eq!(
-            commodities_for_account[0].0,
+            commodities_for_account[0],
             Vec::<u8>::default().blake2_256().into()
         );
-        assert_eq!(commodities_for_account[0].1, Vec::<u8>::default());
         assert_eq!(
-            SUT::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
+            Commodities::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
             1
         );
     });
@@ -44,7 +43,7 @@ fn mint() {
 fn mint_err_non_admin() {
     new_test_ext().execute_with(|| {
         assert_err!(
-            SUT::mint(Origin::signed(1), 1, Vec::<u8>::default()),
+            Commodities::mint(Origin::signed(1), 1, Vec::<u8>::default()),
             sp_runtime::DispatchError::BadOrigin
         );
     });
@@ -53,11 +52,11 @@ fn mint_err_non_admin() {
 #[test]
 fn mint_err_dupe() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SUT::mint(Origin::root(), 1, Vec::<u8>::default()));
+        assert_ok!(Commodities::mint(Origin::root(), 1, Vec::<u8>::default()));
 
         assert_err!(
-            SUT::mint(Origin::root(), 2, Vec::<u8>::default()),
-            Error::<Test, DefaultInstance>::CommodityExists
+            Commodities::mint(Origin::root(), 2, Vec::<u8>::default()),
+            Error::<Test>::CommodityExists
         );
     });
 }
@@ -65,12 +64,12 @@ fn mint_err_dupe() {
 #[test]
 fn mint_err_max_user() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SUT::mint(Origin::root(), 1, vec![]));
-        assert_ok!(SUT::mint(Origin::root(), 1, vec![0]));
+        assert_ok!(Commodities::mint(Origin::root(), 1, vec![]));
+        assert_ok!(Commodities::mint(Origin::root(), 1, vec![0]));
 
         assert_err!(
-            SUT::mint(Origin::root(), 1, vec![1]),
-            Error::<Test, DefaultInstance>::TooManyCommoditiesForAccount
+            Commodities::mint(Origin::root(), 1, vec![1]),
+            Error::<Test>::TooManyCommoditiesForAccount
         );
     });
 }
@@ -78,15 +77,15 @@ fn mint_err_max_user() {
 #[test]
 fn mint_err_max() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SUT::mint(Origin::root(), 1, vec![]));
-        assert_ok!(SUT::mint(Origin::root(), 2, vec![0]));
-        assert_ok!(SUT::mint(Origin::root(), 3, vec![1]));
-        assert_ok!(SUT::mint(Origin::root(), 4, vec![2]));
-        assert_ok!(SUT::mint(Origin::root(), 5, vec![3]));
+        assert_ok!(Commodities::mint(Origin::root(), 1, vec![]));
+        assert_ok!(Commodities::mint(Origin::root(), 2, vec![0]));
+        assert_ok!(Commodities::mint(Origin::root(), 3, vec![1]));
+        assert_ok!(Commodities::mint(Origin::root(), 4, vec![2]));
+        assert_ok!(Commodities::mint(Origin::root(), 5, vec![3]));
 
         assert_err!(
-            SUT::mint(Origin::root(), 6, vec![4]),
-            Error::<Test, DefaultInstance>::TooManyCommodities
+            Commodities::mint(Origin::root(), 6, vec![4]),
+            Error::<Test>::TooManyCommodities
         );
     });
 }
@@ -94,18 +93,18 @@ fn mint_err_max() {
 #[test]
 fn burn() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SUT::mint(Origin::root(), 1, Vec::<u8>::default()));
-        assert_ok!(SUT::burn(
+        assert_ok!(Commodities::mint(Origin::root(), 1, Vec::<u8>::default()));
+        assert_ok!(Commodities::burn(
             Origin::signed(1),
             Vec::<u8>::default().blake2_256().into()
         ));
 
-        assert_eq!(SUT::total(), 0);
-        assert_eq!(SUT::burned(), 1);
-        assert_eq!(SUT::total_for_account(1), 0);
-        assert_eq!(SUT::commodities_for_account::<u64>(1), vec![]);
+        assert_eq!(Commodities::total(), 0);
+        assert_eq!(Commodities::burned(), 1);
+        assert_eq!(Commodities::total_for_account(1), 0);
+        assert_eq!(Commodities::commodities_for_account::<u64>(1), vec![]);
         assert_eq!(
-            SUT::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
+            Commodities::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
             0
         );
     });
@@ -114,11 +113,11 @@ fn burn() {
 #[test]
 fn burn_err_not_owner() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SUT::mint(Origin::root(), 1, Vec::<u8>::default()));
+        assert_ok!(Commodities::mint(Origin::root(), 1, Vec::<u8>::default()));
 
         assert_err!(
-            SUT::burn(Origin::signed(2), Vec::<u8>::default().blake2_256().into()),
-            Error::<Test, DefaultInstance>::NotCommodityOwner
+            Commodities::burn(Origin::signed(2), Vec::<u8>::default().blake2_256().into()),
+            Error::<Test>::NotCommodityOwner
         );
     });
 }
@@ -127,8 +126,8 @@ fn burn_err_not_owner() {
 fn burn_err_not_exist() {
     new_test_ext().execute_with(|| {
         assert_err!(
-            SUT::burn(Origin::signed(1), Vec::<u8>::default().blake2_256().into()),
-            Error::<Test, DefaultInstance>::NotCommodityOwner
+            Commodities::burn(Origin::signed(1), Vec::<u8>::default().blake2_256().into()),
+            Error::<Test>::NotCommodityOwner
         );
     });
 }
@@ -136,27 +135,26 @@ fn burn_err_not_exist() {
 #[test]
 fn transfer() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SUT::mint(Origin::root(), 1, Vec::<u8>::default()));
-        assert_ok!(SUT::transfer(
+        assert_ok!(Commodities::mint(Origin::root(), 1, Vec::<u8>::default()));
+        assert_ok!(Commodities::transfer(
             Origin::signed(1),
             2,
             Vec::<u8>::default().blake2_256().into()
         ));
 
-        assert_eq!(SUT::total(), 1);
-        assert_eq!(SUT::burned(), 0);
-        assert_eq!(SUT::total_for_account(1), 0);
-        assert_eq!(SUT::total_for_account(2), 1);
-        assert_eq!(SUT::commodities_for_account::<u64>(1), vec![]);
-        let commodities_for_account = SUT::commodities_for_account::<u64>(2);
+        assert_eq!(Commodities::total(), 1);
+        assert_eq!(Commodities::burned(), 0);
+        assert_eq!(Commodities::total_for_account(1), 0);
+        assert_eq!(Commodities::total_for_account(2), 1);
+        assert_eq!(Commodities::commodities_for_account::<u64>(1), vec![]);
+        let commodities_for_account = Commodities::commodities_for_account::<u64>(2);
         assert_eq!(commodities_for_account.len(), 1);
         assert_eq!(
-            commodities_for_account[0].0,
+            commodities_for_account[0],
             Vec::<u8>::default().blake2_256().into()
         );
-        assert_eq!(commodities_for_account[0].1, Vec::<u8>::default());
         assert_eq!(
-            SUT::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
+            Commodities::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
             2
         );
     });
@@ -165,15 +163,15 @@ fn transfer() {
 #[test]
 fn transfer_err_not_owner() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SUT::mint(Origin::root(), 1, Vec::<u8>::default()));
+        assert_ok!(Commodities::mint(Origin::root(), 1, Vec::<u8>::default()));
 
         assert_err!(
-            SUT::transfer(
+            Commodities::transfer(
                 Origin::signed(0),
                 2,
                 Vec::<u8>::default().blake2_256().into()
             ),
-            Error::<Test, DefaultInstance>::NotCommodityOwner
+            Error::<Test>::NotCommodityOwner
         );
     });
 }
@@ -182,12 +180,12 @@ fn transfer_err_not_owner() {
 fn transfer_err_not_exist() {
     new_test_ext().execute_with(|| {
         assert_err!(
-            SUT::transfer(
+            Commodities::transfer(
                 Origin::signed(1),
                 2,
                 Vec::<u8>::default().blake2_256().into()
             ),
-            Error::<Test, DefaultInstance>::NotCommodityOwner
+            Error::<Test>::NotCommodityOwner
         );
     });
 }
@@ -195,21 +193,21 @@ fn transfer_err_not_exist() {
 #[test]
 fn transfer_err_max_user() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SUT::mint(Origin::root(), 1, vec![0]));
-        assert_ok!(SUT::mint(Origin::root(), 1, vec![1]));
-        assert_ok!(SUT::mint(Origin::root(), 2, Vec::<u8>::default()));
+        assert_ok!(Commodities::mint(Origin::root(), 1, vec![0]));
+        assert_ok!(Commodities::mint(Origin::root(), 1, vec![1]));
+        assert_ok!(Commodities::mint(Origin::root(), 2, Vec::<u8>::default()));
         assert_eq!(
-            SUT::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
+            Commodities::account_for_commodity::<H256>(Vec::<u8>::default().blake2_256().into()),
             2
         );
 
         assert_err!(
-            SUT::transfer(
+            Commodities::transfer(
                 Origin::signed(2),
                 1,
                 Vec::<u8>::default().blake2_256().into()
             ),
-            Error::<Test, DefaultInstance>::TooManyCommoditiesForAccount
+            Error::<Test>::TooManyCommoditiesForAccount
         );
     });
 }

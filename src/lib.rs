@@ -254,7 +254,7 @@ pub mod pallet {
                     match <Module<T> as UniqueAssets<T::AccountId>>::mint(who, asset.clone()) {
                         Ok(_) => {}
                         Err(err) => {
-                            panic!(err)
+                            panic!("{:?}", err)
                         }
                     }
                 }

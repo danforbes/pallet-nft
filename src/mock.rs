@@ -1,6 +1,5 @@
 // Creating mock runtime here
 
-use crate::{Module, Trait};
 use frame_support::{impl_outer_origin, parameter_types, weights::Weight};
 use frame_system as system;
 use sp_core::H256;
@@ -9,10 +8,24 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
+use crate::pallet::*;
+//use crate as pallet_commodities;
 
 impl_outer_origin! {
     pub enum Origin for Test where system = frame_system {}
 }
+
+// type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<(), (), (), ()>;
+
+// frame_support::impl_outer_event!(
+// 	pub enum Event for Test {
+// 		#[codec(index = 0)] pallet_commodities<T>,
+// 	}
+// );
+// frame_support::impl_runtime_metadata!(
+// 	for Test with modules where Extrinsic = UncheckedExtrinsic
+// 		pallet_commodities::Module as SUT { index 0 } with Storage Call Event,
+// );
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
@@ -21,7 +34,13 @@ parameter_types! {
     pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 }
 
-impl system::Trait for Test {
+// For testing the pallet, we construct most of a mock runtime. This means
+// first constructing a configuration type (`Test`) which `impl`s each of the
+// configuration traits of pallets we want to use.
+#[derive(Clone, Eq, PartialEq)]
+pub struct Test;
+
+impl system::Config for Test {
     type BaseCallFilter = ();
     type Origin = Origin;
     type Call = ();
@@ -34,19 +53,16 @@ impl system::Trait for Test {
     type Header = Header;
     type Event = ();
     type BlockHashCount = BlockHashCount;
-    type MaximumBlockWeight = MaximumBlockWeight;
     type DbWeight = ();
-    type BlockExecutionWeight = ();
-    type ExtrinsicBaseWeight = ();
-    type MaximumExtrinsicWeight = MaximumBlockWeight;
-    type MaximumBlockLength = MaximumBlockLength;
-    type AvailableBlockRatio = AvailableBlockRatio;
+    type BlockLength = ();
+	type BlockWeights = ();
     type Version = ();
-    type PalletInfo = ();
+	type PalletInfo = Self;
     type AccountData = ();
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
+	type SS58Prefix = ();
 }
 
 parameter_types! {
@@ -54,13 +70,7 @@ parameter_types! {
     pub const MaxCommoditiesPerUser: u64 = 2;
 }
 
-// For testing the pallet, we construct most of a mock runtime. This means
-// first constructing a configuration type (`Test`) which `impl`s each of the
-// configuration traits of pallets we want to use.
-#[derive(Clone, Eq, PartialEq)]
-pub struct Test;
-
-impl Trait for Test {
+impl Config for Test {
     type Event = ();
     type CommodityAdmin = frame_system::EnsureRoot<Self::AccountId>;
     type CommodityInfo = Vec<u8>;
@@ -69,8 +79,7 @@ impl Trait for Test {
 }
 
 // system under test
-pub type SUT = Module<Test>;
-
+pub type Commodities = Module<Test>;
 // This function basically just builds a genesis storage key/value store according to
 // our desired mockup.
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -78,4 +87,13 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .build_storage::<Test>()
         .unwrap()
         .into()
+}
+
+impl frame_support::traits::PalletInfo for Test {
+	fn index<P: 'static>() -> Option<usize> {
+		Some(0)
+	}
+	fn name<P: 'static>() -> Option<&'static str> {
+		return Some("Commodities")
+	}
 }
